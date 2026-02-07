@@ -1,54 +1,56 @@
 /**
  * NightCaptchas - Main Application Logic
+ * Scene-based CAPTCHA: one cocktail image split into a 4x4 grid
  */
 
 (function () {
     'use strict';
 
     // ── DOM REFERENCES ──────────────────────────────────────────
-    const creatorView = document.getElementById('creator-view');
-    const captchaView = document.getElementById('captcha-view');
+    var creatorView = document.getElementById('creator-view');
+    var captchaView = document.getElementById('captcha-view');
 
     // Creator
-    const creatorForm = document.getElementById('creator-form');
-    const senderNameInput = document.getElementById('sender-name');
-    const contactInfoInput = document.getElementById('contact-info');
-    const customMessageInput = document.getElementById('custom-message');
-    const linkOutput = document.getElementById('link-output');
-    const shareLinkInput = document.getElementById('share-link');
-    const copyBtn = document.getElementById('copy-btn');
-    const previewBtn = document.getElementById('preview-btn');
+    var creatorForm = document.getElementById('creator-form');
+    var senderNameInput = document.getElementById('sender-name');
+    var contactInfoInput = document.getElementById('contact-info');
+    var customMessageInput = document.getElementById('custom-message');
+    var linkOutput = document.getElementById('link-output');
+    var shareLinkInput = document.getElementById('share-link');
+    var copyBtn = document.getElementById('copy-btn');
+    var previewBtn = document.getElementById('preview-btn');
 
     // Captcha - Checkbox
-    const checkboxStage = document.getElementById('captcha-checkbox-stage');
-    const captchaCheckbox = document.getElementById('captcha-checkbox');
+    var checkboxStage = document.getElementById('captcha-checkbox-stage');
+    var captchaCheckbox = document.getElementById('captcha-checkbox');
 
     // Captcha - Grid
-    const gridStage = document.getElementById('captcha-grid-stage');
-    const targetCocktailEl = document.getElementById('target-cocktail');
-    const captchaGrid = document.getElementById('captcha-grid');
-    const verifyBtn = document.getElementById('verify-btn');
+    var gridStage = document.getElementById('captcha-grid-stage');
+    var targetCocktailEl = document.getElementById('target-cocktail');
+    var sceneImage = document.getElementById('scene-image');
+    var captchaGrid = document.getElementById('captcha-grid');
+    var verifyBtn = document.getElementById('verify-btn');
 
     // Reveal
-    const revealStage = document.getElementById('reveal-stage');
-    const revealText = document.getElementById('reveal-text');
-    const revealCocktailArt = document.getElementById('reveal-cocktail-art');
-    const senderInfo = document.getElementById('sender-info');
-    const revealName = document.getElementById('reveal-name');
-    const revealContact = document.getElementById('reveal-contact');
-    const revealCustomMsg = document.getElementById('reveal-custom-msg');
-    const backToCreate = document.getElementById('back-to-create');
+    var revealStage = document.getElementById('reveal-stage');
+    var revealText = document.getElementById('reveal-text');
+    var revealCocktailArt = document.getElementById('reveal-cocktail-art');
+    var senderInfo = document.getElementById('sender-info');
+    var revealName = document.getElementById('reveal-name');
+    var revealContact = document.getElementById('reveal-contact');
+    var revealCustomMsg = document.getElementById('reveal-custom-msg');
+    var backToCreate = document.getElementById('back-to-create');
 
     // ── STATE ────────────────────────────────────────────────────
-    let currentGrid = null;
-    let selectedCells = new Set();
-    let attempts = 0;
+    var currentScene = null;
+    var selectedCells = new Set();
+    var attempts = 0;
 
     // ── INIT ────────────────────────────────────────────────────
     function init() {
         bindCreatorEvents();
 
-        const params = parseHash();
+        var params = parseHash();
         if (params.name) {
             showCaptchaView(params);
         } else {
@@ -58,37 +60,37 @@
 
     // ── URL ENCODING / DECODING ─────────────────────────────────
     function encodeData(data) {
-        const json = JSON.stringify(data);
+        var json = JSON.stringify(data);
         return btoa(unescape(encodeURIComponent(json)));
     }
 
     function decodeData(encoded) {
         try {
-            const json = decodeURIComponent(escape(atob(encoded)));
+            var json = decodeURIComponent(escape(atob(encoded)));
             return JSON.parse(json);
-        } catch {
+        } catch (e) {
             return {};
         }
     }
 
     function parseHash() {
-        const hash = window.location.hash.slice(1);
+        var hash = window.location.hash.slice(1);
         if (!hash) return {};
         return decodeData(hash);
     }
 
     function buildShareUrl(data) {
-        const encoded = encodeData(data);
-        const base = window.location.origin + window.location.pathname;
+        var encoded = encodeData(data);
+        var base = window.location.origin + window.location.pathname;
         return base + '#' + encoded;
     }
 
     // ── GATHER FORM DATA ────────────────────────────────────────
     function gatherFormData() {
-        const name = senderNameInput.value.trim();
+        var name = senderNameInput.value.trim();
         if (!name) return null;
 
-        const data = { name: name };
+        var data = { name: name };
 
         var contact = contactInfoInput.value.trim();
         if (contact) data.contact = contact;
@@ -164,7 +166,7 @@
         spinner.classList.add('hidden');
         checkmark.classList.add('hidden');
 
-        // Reset reveal elements for re-use
+        // Reset reveal elements
         senderInfo.classList.add('hidden');
         revealContact.classList.add('hidden');
         revealCustomMsg.classList.add('hidden');
@@ -190,11 +192,8 @@
 
     function startCheckboxAnimation(senderData) {
         var spinner = captchaCheckbox.querySelector('.spinner');
-
-        // Show spinner
         spinner.classList.remove('hidden');
 
-        // After brief delay, transition to grid
         setTimeout(function () {
             spinner.classList.add('hidden');
             checkboxStage.classList.add('hidden');
@@ -205,39 +204,29 @@
     function showGrid(senderData) {
         gridStage.classList.remove('hidden');
 
-        // Generate new grid
-        currentGrid = generateCaptchaGrid();
+        // Pick a random scene
+        currentScene = getRandomScene();
         selectedCells.clear();
 
-        // Set target name
-        targetCocktailEl.textContent = COCKTAILS[currentGrid.target].name;
+        // Set target cocktail name
+        targetCocktailEl.textContent = currentScene.name;
 
-        // Update header color to match cocktail
-        var header = gridStage.querySelector('.captcha-header');
-        var color = COCKTAILS[currentGrid.target].color;
-        header.style.background = color;
+        // Insert the scene SVG
+        sceneImage.innerHTML = currentScene.svg;
 
-        // Ensure text contrast on light backgrounds
-        if (['#fdcb6e', '#ffeaa7', '#55efc4', '#dfe6e9'].indexOf(color) !== -1) {
-            header.style.color = '#2d3436';
-        } else {
-            header.style.color = 'white';
-        }
-
-        // Build grid cells
+        // Build 4x4 grid of clickable transparent cells
         captchaGrid.innerHTML = '';
-        currentGrid.cells.forEach(function (cell, index) {
+        for (var i = 0; i < 16; i++) {
             var cellEl = document.createElement('div');
             cellEl.className = 'grid-cell';
-            cellEl.innerHTML = COCKTAILS[cell.key].svg;
-            cellEl.dataset.index = index;
-
-            cellEl.addEventListener('click', function () {
-                toggleCell(cellEl, index);
-            });
-
+            cellEl.dataset.index = i;
+            (function (el, idx) {
+                el.addEventListener('click', function () {
+                    toggleCell(el, idx);
+                });
+            })(cellEl, i);
             captchaGrid.appendChild(cellEl);
-        });
+        }
 
         // Verify button
         verifyBtn.onclick = function () {
@@ -256,12 +245,9 @@
     }
 
     function verifyCaptcha(senderData) {
-        var correctSet = new Set();
-        currentGrid.cells.forEach(function (cell, i) {
-            if (cell.isTarget) correctSet.add(i);
-        });
+        var correctSet = new Set(currentScene.targetCells);
 
-        // Check if selection matches exactly
+        // Check exact match
         var isCorrect =
             selectedCells.size === correctSet.size &&
             Array.from(selectedCells).every(function (i) { return correctSet.has(i); });
@@ -271,7 +257,6 @@
         } else {
             attempts++;
 
-            // Show error feedback
             var cells = captchaGrid.querySelectorAll('.grid-cell');
             captchaGrid.classList.add('grid-shake');
 
@@ -282,28 +267,26 @@
                 }
             });
 
-            // Also highlight missed correct cells
+            // Highlight missed correct cells
             correctSet.forEach(function (i) {
                 if (!selectedCells.has(i)) {
-                    cells[i].style.outline = '2px dashed #e17055';
-                    cells[i].style.outlineOffset = '-2px';
+                    cells[i].classList.add('missed');
                 }
             });
 
             setTimeout(function () {
                 captchaGrid.classList.remove('grid-shake');
-                cells.forEach(function (c) {
-                    c.classList.remove('incorrect');
-                    c.style.outline = '';
-                    c.style.outlineOffset = '';
-                });
-            }, 800);
+                for (var c = 0; c < cells.length; c++) {
+                    cells[c].classList.remove('incorrect');
+                    cells[c].classList.remove('missed');
+                }
+            }, 900);
 
             if (attempts >= 3) {
-                // After 3 failed attempts, regenerate with new cocktails
+                // After 3 failed attempts, load a new scene
                 setTimeout(function () {
                     showGrid(senderData);
-                }, 900);
+                }, 1000);
                 attempts = 0;
             }
         }
@@ -314,22 +297,15 @@
         gridStage.classList.add('hidden');
         revealStage.classList.remove('hidden');
 
-        // Type out the message with a delay for the verified animation
+        // Type out the message
         typeMessage("let's have a night captcha", revealText);
 
-        // Add cocktail decorations
-        revealCocktailArt.innerHTML =
-            COCKTAILS.martini.svg +
-            COCKTAILS.cosmopolitan.svg +
-            COCKTAILS.mojito.svg;
-        revealCocktailArt.style.display = 'flex';
-        revealCocktailArt.style.justifyContent = 'center';
-        revealCocktailArt.style.gap = '0.5rem';
-        var svgs = revealCocktailArt.querySelectorAll('svg');
-        for (var s = 0; s < svgs.length; s++) {
-            svgs[s].style.width = '55px';
-            svgs[s].style.height = '55px';
-        }
+        // Mini cocktail decoration using simple inline SVGs
+        revealCocktailArt.innerHTML = [
+            '<svg viewBox="0 0 60 60"><polygon points="15,10 45,10 30,40" fill="rgba(255,203,110,0.5)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/><line x1="30" y1="40" x2="30" y2="52" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><ellipse cx="30" cy="53" rx="10" ry="2.5" fill="rgba(255,255,255,0.2)"/></svg>',
+            '<svg viewBox="0 0 60 60"><path d="M22,8 Q18,30 22,40 Q26,48 30,48 L30,48 Q34,48 38,40 Q42,30 38,8 Z" fill="rgba(142,32,67,0.5)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/><line x1="30" y1="48" x2="30" y2="55" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><ellipse cx="30" cy="56" rx="10" ry="2.5" fill="rgba(255,255,255,0.2)"/></svg>',
+            '<svg viewBox="0 0 60 60"><rect x="20" y="8" width="20" height="40" rx="2" fill="rgba(85,239,196,0.4)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/><ellipse cx="30" cy="14" rx="8" ry="4" fill="rgba(46,204,113,0.6)"/><circle cx="28" cy="30" r="2" fill="rgba(255,255,255,0.2)"/><circle cx="33" cy="36" r="1.5" fill="rgba(255,255,255,0.15)"/></svg>'
+        ].join('');
 
         // Show sender info
         if (senderData.name) {
@@ -351,7 +327,6 @@
     function typeMessage(message, element) {
         element.textContent = '';
         element.style.opacity = '1';
-        element.style.animation = 'none';
         var i = 0;
 
         function type() {
@@ -362,7 +337,7 @@
             }
         }
 
-        // Start typing after verified badge animation plays
+        // Start typing after verified badge animation
         setTimeout(type, 900);
     }
 
