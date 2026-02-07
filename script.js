@@ -298,7 +298,7 @@
         revealStage.classList.remove('hidden');
 
         // Type out the message
-        typeMessage("would you like to have a drink with me?", revealText);
+        typeMessage("you're cute, let's have a drink.", revealText);
 
         // Mini cocktail decoration using simple inline SVGs
         revealCocktailArt.innerHTML = [
