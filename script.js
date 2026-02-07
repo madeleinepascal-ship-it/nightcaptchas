@@ -298,7 +298,7 @@
         revealStage.classList.remove('hidden');
 
         // Type out the message
-        typeMessage("let's have a night captcha", revealText);
+        typeMessage("would you like to have a drink with me?", revealText);
 
         // Mini cocktail decoration using simple inline SVGs
         revealCocktailArt.innerHTML = [
