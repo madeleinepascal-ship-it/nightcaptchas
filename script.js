@@ -46,14 +46,44 @@
     var selectedCells = new Set();
     var attempts = 0;
 
+    // ── LANDING OVERLAY ─────────────────────────────────────────
+    var landingOverlay = document.getElementById('landing-overlay');
+    var landingScene = document.getElementById('landing-scene');
+
+    function setupLanding() {
+        // Populate scene
+        var scene = getRandomScene();
+        landingScene.innerHTML = scene.svg;
+
+        // Populate grid cells
+        var gridEl = landingOverlay.querySelector('.landing-grid');
+        for (var g = 0; g < 16; g++) {
+            var cell = document.createElement('div');
+            cell.className = 'landing-grid-cell';
+            gridEl.appendChild(cell);
+        }
+
+        // Dissolve after a short pause
+        setTimeout(function () {
+            landingOverlay.classList.add('dissolving');
+            // Remove from DOM after transition ends
+            landingOverlay.addEventListener('transitionend', function () {
+                landingOverlay.classList.add('gone');
+            }, { once: true });
+        }, 1800);
+    }
+
     // ── INIT ────────────────────────────────────────────────────
     function init() {
         bindCreatorEvents();
 
         var params = parseHash();
         if (params.name) {
+            // Skip landing for recipients
+            landingOverlay.classList.add('gone');
             showCaptchaView(params);
         } else {
+            setupLanding();
             showCreatorView();
         }
     }
