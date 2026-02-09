@@ -46,31 +46,102 @@
     var selectedCells = new Set();
     var attempts = 0;
 
-    // ── LANDING OVERLAY ─────────────────────────────────────────
-    var landingOverlay = document.getElementById('landing-overlay');
-    var landingScene = document.getElementById('landing-scene');
+    // ── LANDING CAPTCHA ─────────────────────────────────────────
+    var landingWrapper = document.getElementById('landing-captcha');
+    var landingCheckboxStage = document.getElementById('landing-checkbox-stage');
+    var landingCheckbox = document.getElementById('landing-checkbox');
+    var landingGridStage = document.getElementById('landing-grid-stage');
+    var landingTarget = document.getElementById('landing-target');
+    var landingSceneImage = document.getElementById('landing-scene-image');
+    var landingGrid = document.getElementById('landing-grid');
+    var landingVerifyBtn = document.getElementById('landing-verify-btn');
+    var landingScene = null;
+    var landingSelected = new Set();
+    var landingAttempts = 0;
 
-    function setupLanding() {
-        // Populate scene
-        var scene = getRandomScene();
-        landingScene.innerHTML = scene.svg;
+    function setupLandingCaptcha() {
+        // Checkbox handler
+        var handler = function () {
+            landingCheckbox.removeEventListener('click', handler);
+            landingCheckbox.removeEventListener('keydown', kHandler);
+            var sp = landingCheckbox.querySelector('.spinner');
+            sp.classList.remove('hidden');
+            setTimeout(function () {
+                sp.classList.add('hidden');
+                landingCheckboxStage.classList.add('hidden');
+                showLandingGrid();
+            }, 800 + Math.random() * 600);
+        };
+        var kHandler = function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
+        };
+        landingCheckbox.addEventListener('click', handler);
+        landingCheckbox.addEventListener('keydown', kHandler);
+    }
 
-        // Populate grid cells
-        var gridEl = landingOverlay.querySelector('.landing-grid');
-        for (var g = 0; g < 16; g++) {
-            var cell = document.createElement('div');
-            cell.className = 'landing-grid-cell';
-            gridEl.appendChild(cell);
+    function showLandingGrid() {
+        landingGridStage.classList.remove('hidden');
+        landingScene = getRandomScene();
+        landingSelected.clear();
+        landingTarget.textContent = landingScene.name;
+        landingSceneImage.innerHTML = landingScene.svg;
+
+        landingGrid.innerHTML = '';
+        for (var i = 0; i < 16; i++) {
+            var el = document.createElement('div');
+            el.className = 'grid-cell';
+            el.dataset.index = i;
+            (function (cel, idx) {
+                cel.addEventListener('click', function () {
+                    if (landingSelected.has(idx)) {
+                        landingSelected.delete(idx);
+                        cel.classList.remove('selected');
+                    } else {
+                        landingSelected.add(idx);
+                        cel.classList.add('selected');
+                    }
+                });
+            })(el, i);
+            landingGrid.appendChild(el);
         }
 
-        // Dissolve after a short pause
-        setTimeout(function () {
-            landingOverlay.classList.add('dissolving');
-            // Remove from DOM after transition ends
-            landingOverlay.addEventListener('transitionend', function () {
-                landingOverlay.classList.add('gone');
+        landingVerifyBtn.onclick = function () { verifyLandingCaptcha(); };
+    }
+
+    function verifyLandingCaptcha() {
+        var correct = new Set(landingScene.targetCells);
+        var ok = landingSelected.size === correct.size &&
+            Array.from(landingSelected).every(function (i) { return correct.has(i); });
+
+        if (ok) {
+            // Success — dissolve landing, show creator form
+            landingWrapper.classList.add('dissolving');
+            creatorView.classList.remove('hidden');
+            landingWrapper.addEventListener('transitionend', function () {
+                landingWrapper.classList.add('gone');
             }, { once: true });
-        }, 1800);
+        } else {
+            landingAttempts++;
+            var cells = landingGrid.querySelectorAll('.grid-cell');
+            landingGrid.classList.add('grid-shake');
+            landingSelected.forEach(function (i) {
+                if (!correct.has(i)) cells[i].classList.add('incorrect');
+            });
+            correct.forEach(function (i) {
+                if (!landingSelected.has(i)) cells[i].classList.add('missed');
+            });
+            setTimeout(function () {
+                landingGrid.classList.remove('grid-shake');
+                for (var c = 0; c < cells.length; c++) {
+                    cells[c].classList.remove('incorrect');
+                    cells[c].classList.remove('missed');
+                }
+            }, 900);
+            if (landingAttempts >= 3) {
+                setTimeout(function () { showLandingGrid(); }, 1000);
+                landingAttempts = 0;
+            }
+        }
     }
 
     // ── INIT ────────────────────────────────────────────────────
@@ -79,12 +150,11 @@
 
         var params = parseHash();
         if (params.name) {
-            // Skip landing for recipients
-            landingOverlay.classList.add('gone');
+            // Recipients skip landing, go straight to captcha
+            landingWrapper.classList.add('gone');
             showCaptchaView(params);
         } else {
-            setupLanding();
-            showCreatorView();
+            setupLandingCaptcha();
         }
     }
 

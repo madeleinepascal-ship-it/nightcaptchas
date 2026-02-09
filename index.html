@@ -9,18 +9,56 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Landing overlay: shows a captcha scene then dissolves -->
-    <div id="landing-overlay" class="landing-overlay">
-        <div id="landing-scene" class="landing-scene"></div>
-        <div class="landing-grid"></div>
-        <div class="landing-text">
+    <!-- Landing: solve a captcha to reveal the form -->
+    <div id="landing-captcha" class="landing-captcha-wrapper">
+        <div class="logo-area">
             <h1 class="logo-text">nightcaptchas</h1>
             <p class="tagline">the best way for humans to ask humans out</p>
         </div>
+        <div class="landing-captcha-center">
+            <!-- Checkbox -->
+            <div id="landing-checkbox-stage" class="captcha-box">
+                <div class="captcha-checkbox-row">
+                    <div id="landing-checkbox" class="captcha-checkbox" tabindex="0" role="checkbox" aria-checked="false">
+                        <svg class="checkmark hidden" viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M5 13l4 4L19 7" fill="none" stroke="#4285f4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="spinner hidden"></div>
+                    </div>
+                    <span class="checkbox-label">I'm not a robot</span>
+                    <div class="recaptcha-brand">
+                        <div class="brand-logo">
+                            <svg viewBox="0 0 30 30" width="28" height="28">
+                                <path d="M15 5 L20 5 L20 12 L25 8 L25 22 L20 18 L20 25 L15 25 L15 18 L10 22 L10 8 L15 12 Z" fill="#ff6b6b"/>
+                            </svg>
+                        </div>
+                        <div class="brand-text">
+                            <span>nightCAPTCHA</span>
+                            <span class="brand-sub">Cocktail Verification</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Grid -->
+            <div id="landing-grid-stage" class="captcha-grid-container hidden">
+                <div class="captcha-header">
+                    <p class="captcha-instruction">Select all squares with the</p>
+                    <h3 id="landing-target" class="target-name">Martini</h3>
+                    <p class="captcha-hint">Click verify once you've selected them all</p>
+                </div>
+                <div class="captcha-scene">
+                    <div id="landing-scene-image" class="scene-image"></div>
+                    <div id="landing-grid" class="scene-grid"></div>
+                </div>
+                <div class="captcha-footer">
+                    <button id="landing-verify-btn" class="verify-btn">Verify</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- VIEW 1: Creator / Landing Page -->
-    <div id="creator-view" class="view">
+    <!-- VIEW 1: Creator / Form (hidden until landing captcha solved) -->
+    <div id="creator-view" class="view hidden">
         <div class="creator-container">
             <div class="logo-area">
                 <h1 class="logo-text">nightcaptchas</h1>
