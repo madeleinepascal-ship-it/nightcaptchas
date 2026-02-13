@@ -26,6 +26,34 @@
         setInterval(createHeart, 1500);
     })();
 
+    // ── HEART BURST ──────────────────────────────────────────────
+    function burstHearts(container, count) {
+        var symbols = ['\u2764', '\u2665', '\u2661', '\uD83D\uDC95', '\uD83D\uDC96'];
+        for (var i = 0; i < count; i++) {
+            (function (idx) {
+                setTimeout(function () {
+                    var h = document.createElement('span');
+                    h.className = 'burst-heart';
+                    h.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                    var startX = 20 + Math.random() * 60;
+                    var startY = 30 + Math.random() * 40;
+                    h.style.left = startX + '%';
+                    h.style.top = startY + '%';
+                    var dx = (Math.random() - 0.5) * 200;
+                    var dy = -(40 + Math.random() * 120);
+                    var rot = (Math.random() - 0.5) * 60;
+                    h.style.setProperty('--dx', dx + 'px');
+                    h.style.setProperty('--dy', dy + 'px');
+                    h.style.setProperty('--rot', rot + 'deg');
+                    h.style.animationDuration = (1.2 + Math.random() * 1) + 's';
+                    h.style.fontSize = (0.9 + Math.random() * 0.8) + 'rem';
+                    container.appendChild(h);
+                    h.addEventListener('animationend', function () { h.remove(); });
+                }, idx * 80);
+            })(i);
+        }
+    }
+
     // ── DOM REFERENCES ──────────────────────────────────────────
     var creatorView = document.getElementById('creator-view');
     var captchaView = document.getElementById('captcha-view');
@@ -231,6 +259,7 @@
             var url = buildShareUrl(data);
             shareLinkInput.value = url;
             linkOutput.classList.remove('hidden');
+            burstHearts(document.getElementById('link-hearts'), 15);
         });
 
         copyBtn.addEventListener('click', function () {
@@ -416,6 +445,13 @@
     function showReveal(senderData) {
         gridStage.classList.add('hidden');
         revealStage.classList.remove('hidden');
+
+        // Burst hearts on reveal
+        var revealHeartsEl = document.getElementById('reveal-hearts');
+        revealHeartsEl.innerHTML = '';
+        burstHearts(revealHeartsEl, 20);
+        // Second wave after a beat
+        setTimeout(function () { burstHearts(revealHeartsEl, 12); }, 1200);
 
         // Type out the message
         typeMessage("you're cute, let's have a drink.", revealText);
