@@ -6,6 +6,26 @@
 (function () {
     'use strict';
 
+    // ── FLOATING HEARTS ──────────────────────────────────────────
+    (function spawnHearts() {
+        var container = document.getElementById('hearts-container');
+        var symbols = ['\u2764', '\u2665', '\u2661'];
+        function createHeart() {
+            var heart = document.createElement('span');
+            heart.className = 'heart';
+            heart.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+            heart.style.left = Math.random() * 100 + '%';
+            heart.style.animationDuration = (6 + Math.random() * 6) + 's';
+            heart.style.animationDelay = (Math.random() * 2) + 's';
+            heart.style.fontSize = (0.8 + Math.random() * 1.2) + 'rem';
+            heart.style.color = 'rgba(255,' + Math.floor(50 + Math.random() * 80) + ',' + Math.floor(50 + Math.random() * 80) + ',0.6)';
+            container.appendChild(heart);
+            heart.addEventListener('animationend', function () { heart.remove(); });
+        }
+        for (var i = 0; i < 8; i++) { setTimeout(createHeart, i * 700); }
+        setInterval(createHeart, 1500);
+    })();
+
     // ── DOM REFERENCES ──────────────────────────────────────────
     var creatorView = document.getElementById('creator-view');
     var captchaView = document.getElementById('captcha-view');
